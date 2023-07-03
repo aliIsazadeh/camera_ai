@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "462153771687",
+    "project_id": "cameraappai-fb51a",
+    "storage_bucket": "cameraappai-fb51a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:462153771687:android:857962f5420af368090982",
+        "android_client_info": {
+          "package_name": "com.example.aicamera"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "462153771687-r5nkvpuuhj4bvtsjm9ocput1aebk6voj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFd9ckTKo06j7ryRuRg8jVksduREP0iwc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "462153771687-r5nkvpuuhj4bvtsjm9ocput1aebk6voj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:462153771687:android:7512ecebe397690b090982",
+        "android_client_info": {
+          "package_name": "com.medium.cameraapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "462153771687-r5nkvpuuhj4bvtsjm9ocput1aebk6voj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFd9ckTKo06j7ryRuRg8jVksduREP0iwc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "462153771687-r5nkvpuuhj4bvtsjm9ocput1aebk6voj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
