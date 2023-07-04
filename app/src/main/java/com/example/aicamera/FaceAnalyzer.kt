@@ -9,7 +9,7 @@ import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 @ExperimentalGetImage
-class FaceAnalyzer(private val onFacesDetected: (List<Face>) -> Unit) : ImageAnalysis.Analyzer {
+class FaceAnalyzer(private val onFacesDetected: (List<Face>) -> Unit ) : ImageAnalysis.Analyzer {
     val highAccuracyOpts = FaceDetectorOptions.Builder()
         .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
         .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
@@ -23,6 +23,9 @@ class FaceAnalyzer(private val onFacesDetected: (List<Face>) -> Unit) : ImageAna
     private val detector = FaceDetection.getClient(realTimeOpts)
 
     override fun  analyze(image: ImageProxy) {
+
+
+        Log.d("FACE ANALYZER" , "it is working")
         val mediaImage = image.image ?: return
 
         val rotation = image.imageInfo.rotationDegrees
@@ -31,6 +34,8 @@ class FaceAnalyzer(private val onFacesDetected: (List<Face>) -> Unit) : ImageAna
         detector.process(InputImage.fromMediaImage(mediaImage , image.imageInfo.rotationDegrees))
             .addOnSuccessListener { faces ->
                 // Once you have detected the faces, call the onFacesDetected callback
+                Log.d(TAG, "Face detection successed number of faces is : " + faces.size.toString())
+
                 onFacesDetected(faces)
             }
             .addOnFailureListener { e ->
