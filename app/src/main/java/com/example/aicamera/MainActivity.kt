@@ -23,6 +23,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -58,8 +59,9 @@ class MainActivity : ComponentActivity() {
 
 
     val faces = mutableListOf<Face>()
+
     @OptIn(ExperimentalPermissionsApi::class)
-    override fun  onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         requestCameraPermission()
 
@@ -110,7 +112,7 @@ class MainActivity : ComponentActivity() {
                                 systemUiController.setSystemBarsColor(
                                     color = Color.Transparent
                                 )
-                                if(perm.status.isGranted){
+                                if (perm.status.isGranted) {
                                     //permission is granted
                                     AndroidView(modifier = Modifier.fillMaxSize(),
                                         factory = { context ->
@@ -140,23 +142,31 @@ class MainActivity : ComponentActivity() {
 
                                     Log.d("ther coud be  ", "Log" + faces?.value?.size)
 
+                                    val state = viewModel?.faceState?.value
 
-                                    faces?.value?.forEach {
-                                        Log.d("View model" , "face detected")
-                                        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                                            val rect = it.boundingBox
+                                    state.let { faces ->
+                                        faces?.onEach {
+                                            Log.d("View model", "face detected")
+                                            androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                                                val rect = it.boundingBox
 
-                                            drawRect(
-                                                Color.Red,
-                                                topLeft = Offset(
-                                                    x = rect.left.toFloat(),
-                                                    y = rect.top.toFloat()
-                                                ),
-                                                style = Stroke(width = 2f,)
-                                            )
+                                                val faceCenterX = it.boundingBox.centerX()
+                                                val faceCenterY = it.boundingBox.centerY()
+
+
+
+                                                drawRect(
+                                                    Color.Red,
+                                                    topLeft = Offset(
+                                                        x = rect.left.toFloat(),
+                                                        y = rect.top.toFloat()
+                                                    ),
+                                                    style = Stroke(width = 2f),
+                                                    size = Size((faceCenterX.toFloat()  - rect.left ) * 4    , (faceCenterY.toFloat() -rect.top  )* 5 )
+                                                )
+                                            }
                                         }
                                     }
-
 
 
                                 }
@@ -170,17 +180,17 @@ class MainActivity : ComponentActivity() {
 
     }
 
-    fun setFaces(faceList : List<Face>) {
+    fun setFaces(faceList: List<Face>) {
         faces.clear()
         faces.addAll(faceList)
     }
 
     private val faceDetectorAnalyzer by lazy {
         FaceAnalyzer(onFacesDetected = {
-           viewModel?.faces = mutableStateOf(it)
-            viewModel?.changeValue()
+            viewModel?.faces = mutableStateOf(it)
+            viewModel?.changeValue(it)
 
-            Log.d("the number of faces" ,it.size.toString())
+            Log.d("the number of faces", it.size.toString())
         })
     }
     private val cameraExecutor: ExecutorService by lazy { Executors.newSingleThreadExecutor() }
@@ -190,7 +200,7 @@ class MainActivity : ComponentActivity() {
         ImageAnalysis.Builder().setTargetAspectRatio(AspectRatio.RATIO_16_9)
             .build()
             .also {
-                it.setAnalyzer(cameraExecutor , faceDetectorAnalyzer)
+                it.setAnalyzer(cameraExecutor, faceDetectorAnalyzer)
             }
     }
 
@@ -266,6 +276,7 @@ class MainActivity : ComponentActivity() {
             else -> requestPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
+
     private fun ProcessCameraProvider.bind(
         preview: androidx.camera.core.Preview,
         imageAnalyzer: ImageAnalysis
