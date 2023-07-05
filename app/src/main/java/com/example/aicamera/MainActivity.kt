@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ToggleButton
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,6 +20,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -26,7 +28,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.toComposeRect
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.Preview
@@ -58,7 +63,6 @@ class MainActivity : ComponentActivity() {
 //    private lateinit var  faceRepo : FacesRepo
 
 
-    val faces = mutableListOf<Face>()
 
     @OptIn(ExperimentalPermissionsApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,7 +82,9 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize()
                 ) {
 
-                    Log.d("ther coud be a ", "Log")
+                    val configuration = LocalConfiguration.current
+                    val width = configuration.screenWidthDp
+
                     val context = LocalContext.current
                     val permissionsState = rememberMultiplePermissionsState(
                         permissions = listOf(
@@ -104,7 +110,6 @@ class MainActivity : ComponentActivity() {
                     )
 
                     permissionsState.permissions.forEach { perm ->
-                        Log.d("ther coud be 1 ", "Log")
 
                         when (perm.permission) {
                             Manifest.permission.CAMERA -> {
@@ -133,36 +138,52 @@ class MainActivity : ComponentActivity() {
                                             }
                                             previewView
                                         })
-                                    Log.d("ther coud be 2 ", "Log")
 
-                                    val faces = remember {
-                                        viewModel?.faces
-                                    }
+//                                    val faces = remember {
+//                                        viewModel?.faces
+//                                    }
+//
+//
+//                                    Log.d("ther coud be  ", "Log" + faces?.value?.size)
 
 
-                                    Log.d("ther coud be  ", "Log" + faces?.value?.size)
+
 
                                     val state = viewModel?.faceState?.value
 
-                                    state.let { faces ->
+                                    state?.let { faces ->
                                         faces?.onEach {
-                                            Log.d("View model", "face detected")
                                             androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
                                                 val rect = it.boundingBox
+
+                                                Log.d("Left" , rect.left.toString())
+                                                Log.d("right" , rect.right.toString())
+                                                Log.d("top" , rect.top.toString())
+                                                Log.d("bottom" , rect.bottom.toString())
+
 
                                                 val faceCenterX = it.boundingBox.centerX()
                                                 val faceCenterY = it.boundingBox.centerY()
 
+                                                val composeRect = it.boundingBox.toComposeRect()
 
+//
+//                                                drawCircle(
+//                                                    color = Color.Red,
+//                                                    radius = rect.right.toFloat() - rect.centerX()
+//                                                        .toFloat(),
+//                                                    center = Offset(
+//                                                        x =  rect.right.toFloat(),
+//                                                        y = rect.exactCenterY().toFloat()
+//                                                    ),
+//                                                    style = Stroke(width = 2f),
+//                                                )
 
                                                 drawRect(
                                                     Color.Red,
-                                                    topLeft = Offset(
-                                                        x = rect.left.toFloat(),
-                                                        y = rect.top.toFloat()
-                                                    ),
+                                                    topLeft = Offset(x= (width - rect.left).toFloat() , y = rect.top.toFloat()),
                                                     style = Stroke(width = 2f),
-                                                    size = Size((faceCenterX.toFloat()  - rect.left ) * 4    , (faceCenterY.toFloat() -rect.top  )* 5 )
+                                                    size = Size( (composeRect.width * 1.5).toFloat() , composeRect.height * 2)
                                                 )
                                             }
                                         }
@@ -180,17 +201,22 @@ class MainActivity : ComponentActivity() {
 
     }
 
-    fun setFaces(faceList: List<Face>) {
-        faces.clear()
-        faces.addAll(faceList)
-    }
+
 
     private val faceDetectorAnalyzer by lazy {
         FaceAnalyzer(onFacesDetected = {
-            viewModel?.faces = mutableStateOf(it)
-            viewModel?.changeValue(it)
+//            viewModel?.faces = mutableStateOf(it)
+            viewModel?.changeFaceValue(it)
 
-            Log.d("the number of faces", it.size.toString())
+        })
+    }
+
+
+    private val objectDetectorAnalyzer by lazy {
+        ObjectAnalyzer(onObjectDetected = {
+//            viewModel?.faces = mutableStateOf(it)
+            viewModel?.changeObjectValue(it)
+
         })
     }
     private val cameraExecutor: ExecutorService by lazy { Executors.newSingleThreadExecutor() }
