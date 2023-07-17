@@ -13,14 +13,14 @@ class FaceAnalyzer(private val onFacesDetected: (List<Face>) -> Unit ) : ImageAn
     val highAccuracyOpts = FaceDetectorOptions.Builder()
         .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
         .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
-        .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
+        .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_NONE)
         .build()
 
     // Real-time contour detection
     val realTimeOpts = FaceDetectorOptions.Builder()
         .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
         .build()
-    private val detector = FaceDetection.getClient(realTimeOpts)
+    private val detector = FaceDetection.getClient(highAccuracyOpts)
 
     override fun  analyze(image: ImageProxy) {
 

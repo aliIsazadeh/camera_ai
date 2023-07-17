@@ -1,14 +1,16 @@
 package com.example.aicamera
 
 import android.Manifest
+import android.R.attr.*
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import androidx.compose.ui.graphics.Paint
+import android.icu.number.Scale
 import android.os.Bundle
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ToggleButton
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,16 +22,18 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.toComposeRect
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -45,14 +49,13 @@ import com.example.aicamera.ui.theme.AiCameraTheme
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import com.google.accompanist.permissions.shouldShowRationale
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.google.mlkit.vision.face.Face
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+
 
 @androidx.annotation.OptIn(androidx.camera.core.ExperimentalGetImage::class)
 class MainActivity : ComponentActivity() {
@@ -61,7 +64,6 @@ class MainActivity : ComponentActivity() {
     private var viewModel: CameraViewModel? = null
 //
 //    private lateinit var  faceRepo : FacesRepo
-
 
 
     @OptIn(ExperimentalPermissionsApi::class)
@@ -77,6 +79,21 @@ class MainActivity : ComponentActivity() {
         setContent {
             AiCameraTheme {
                 // A surface container using the 'background' color from the theme
+
+
+                val selectedColor = Color(R.color.white)
+
+                val facePositionPaint: Paint = Paint()
+                facePositionPaint.color = selectedColor
+
+                val idPaint: Paint = Paint()
+                idPaint.color = selectedColor
+
+                val boxPaint: Paint = Paint()
+                boxPaint.color = selectedColor
+                boxPaint.style = PaintingStyle.Stroke
+                boxPaint.strokeWidth = 2f
+
 
                 Box(
                     modifier = Modifier.fillMaxSize()
@@ -142,65 +159,108 @@ class MainActivity : ComponentActivity() {
 //                                    val faces = remember {
 //                                        viewModel?.faces
 //                                    }
-//
+//`
 //
 //                                    Log.d("ther coud be  ", "Log" + faces?.value?.size)
 
 
-
-
+                                    var scale: Unit
                                     val state = viewModel?.faceState?.value
+                                    Box(modifier = Modifier.scale(scaleX = -1f, scaleY = 1f)) {
+                                        state?.let { faces ->
+                                            faces.onEach { face ->
 
-                                    state?.let { faces ->
-                                        faces?.onEach {
-                                            androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                                                val rect = it.boundingBox
+                                                androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
 
-                                                Log.d("Left" , rect.left.toString())
-                                                Log.d("right" , rect.right.toString())
-                                                Log.d("top" , rect.top.toString())
-                                                Log.d("bottom" , rect.bottom.toString())
+//                                                        drawIntoCanvas {
+//                                                            it.drawRect(rect = face.boundingBox.toComposeRect() , paint =  boxPaint)
+//                                                        }
+
+                                                    val rect = face.boundingBox
 
 
-                                                val faceCenterX = it.boundingBox.centerX()
-                                                val faceCenterY = it.boundingBox.centerY()
+                                                    val newOffset: Offset = Offset(
+                                                        x = face.boundingBox.exactCenterX()
+                                                            .toFloat(),
+                                                        y = face.boundingBox.exactCenterY()
+                                                    )
 
-                                                val composeRect = it.boundingBox.toComposeRect()
+//                                                        scale = scale(
+//                                                            scaleX = it.boundingBox.width()
+//                                                                .toFloat(),
+//                                                            scaleY = it.boundingBox.height()
+//                                                                .toFloat(),
+//                                                            pivot = Offset(
+//                                                                x = it.boundingBox.exactCenterX(),
+//                                                                y = it.boundingBox.exactCenterY()
+//                                                            ),
+//                                                            block = {
+//                                                                drawRect(color = Color.Red)
+//                                                            }
+//                                                        )
 
-//
-//                                                drawCircle(
-//                                                    color = Color.Red,
-//                                                    radius = rect.right.toFloat() - rect.centerX()
-//                                                        .toFloat(),
-//                                                    center = Offset(
-//                                                        x =  rect.right.toFloat(),
-//                                                        y = rect.exactCenterY().toFloat()
-//                                                    ),
-//                                                    style = Stroke(width = 2f),
-//                                                )
 
-                                                drawRect(
-                                                    Color.Red,
-                                                    topLeft = Offset(x= (width - rect.left).toFloat() , y = rect.top.toFloat()),
-                                                    style = Stroke(width = 2f),
-                                                    size = Size( (composeRect.width * 1.5).toFloat() , composeRect.height * 2)
-                                                )
+                                                    //                                                    val xOffset: Float =
+                                                    //                                                        scaleX(face.getBoundingBox().width() / 2.0f)
+                                                    //                                                    val yOffset: Float =
+                                                    //                                                        scaleY(
+                                                    //                                                            face.getBoundingBox().height() / 2.0f
+                                                    //                                                        )
+//                                                                                                            val left = x - xOffset
+//                                                                                                            val top = y - yOffset
+//                                                                                                            val right = x + xOffset
+//                                                                                                            val bottom = y + yOffset
+
+                                                    Log.d("Left", rect.left.toString())
+                                                    Log.d("right", rect.right.toString())
+                                                    Log.d("top", rect.top.toString())
+                                                    Log.d("bottom", rect.bottom.toString())
+                                                    //
+                                                    //
+                                                    //                                                    val faceCenterX = it.boundingBox.centerX()
+                                                    //                                                    val faceCenterY = it.boundingBox.centerY()
+
+                                                    val composeRect =
+                                                        face.boundingBox.toComposeRect()
+                                                    //
+
+                                                    //
+                                                    //                                                drawCircle(
+                                                    //                                                    color = Color.Red,
+                                                    //                                                    radius = rect.right.toFloat() - rect.centerX()
+                                                    //                                                        .toFloat(),
+                                                    //                                                    center = composeRect.center,
+                                                    //                                                    style = Stroke(width = 2f),
+                                                    //                                                )
+
+                                                    //
+
+
+                                                    drawRect(
+                                                        Color.Red,
+                                                        topLeft = composeRect.topLeft.copy(
+                                                            y = composeRect.top + composeRect.height / 2,
+                                                            x = composeRect.left + composeRect.width / 2
+                                                        ),
+                                                        style = Stroke(width = 2f),
+                                                        size = Size(
+                                                            rect.width().toFloat() * 1.5f,
+                                                            rect.height().toFloat() * 2f
+                                                        )
+                                                    )
+                                                }
                                             }
+
                                         }
                                     }
-
-
                                 }
                             }
                         }
                     }
-
                 }
             }
         }
-
     }
-
 
 
     private val faceDetectorAnalyzer by lazy {
