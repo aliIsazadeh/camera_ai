@@ -4,6 +4,7 @@ import android.Manifest
 import android.R.attr.*
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.graphics.Rect
 import androidx.compose.ui.graphics.Paint
 import android.icu.number.Scale
 import android.os.Bundle
@@ -101,6 +102,7 @@ class MainActivity : ComponentActivity() {
 
                     val configuration = LocalConfiguration.current
                     val width = configuration.screenWidthDp
+                    val height = configuration.screenHeightDp
 
                     val context = LocalContext.current
                     val permissionsState = rememberMultiplePermissionsState(
@@ -171,12 +173,38 @@ class MainActivity : ComponentActivity() {
                                             faces.onEach { face ->
 
                                                 androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                                                    val rect = face.boundingBox
+
+
+                                                    val mapedRec = mapRectOnView(mlKitRect = rect, viewHeight = height, viewWidth = width)
+
+
+                                                    // Class variables
+                                                    var yOffset = 0
+                                                    var previousFaceCenterY = 0f
+
+// On each detect
+                                                    val currentFace = face
+                                                    val currentCenterY = currentFace.boundingBox.exactCenterY()
+
+                                                    if(currentCenterY > previousFaceCenterY) {
+                                                        // Face moved down
+                                                        yOffset++
+                                                    } else if (currentCenterY < previousFaceCenterY) {
+                                                        // Face moved up
+                                                        yOffset--
+                                                    }
+
+// Update previous for next time
+                                                    previousFaceCenterY = currentCenterY
+
+// Apply offset
+                                                    mapedRec.offset(0, -yOffset)
 
 //                                                        drawIntoCanvas {
 //                                                            it.drawRect(rect = face.boundingBox.toComposeRect() , paint =  boxPaint)
 //                                                        }
 
-                                                    val rect = face.boundingBox
 
 
                                                     val newOffset: Offset = Offset(
@@ -185,43 +213,23 @@ class MainActivity : ComponentActivity() {
                                                         y = face.boundingBox.exactCenterY()
                                                     )
 
-//                                                        scale = scale(
-//                                                            scaleX = it.boundingBox.width()
-//                                                                .toFloat(),
-//                                                            scaleY = it.boundingBox.height()
-//                                                                .toFloat(),
-//                                                            pivot = Offset(
-//                                                                x = it.boundingBox.exactCenterX(),
-//                                                                y = it.boundingBox.exactCenterY()
-//                                                            ),
-//                                                            block = {
-//                                                                drawRect(color = Color.Red)
-//                                                            }
-//                                                        )
 
 
-                                                    //                                                    val xOffset: Float =
-                                                    //                                                        scaleX(face.getBoundingBox().width() / 2.0f)
-                                                    //                                                    val yOffset: Float =
-                                                    //                                                        scaleY(
-                                                    //                                                            face.getBoundingBox().height() / 2.0f
-                                                    //                                                        )
-//                                                                                                            val left = x - xOffset
-//                                                                                                            val top = y - yOffset
-//                                                                                                            val right = x + xOffset
-//                                                                                                            val bottom = y + yOffset
-
-                                                    Log.d("Left", rect.left.toString())
-                                                    Log.d("right", rect.right.toString())
-                                                    Log.d("top", rect.top.toString())
-                                                    Log.d("bottom", rect.bottom.toString())
+//                                                    Log.d("Left", rect.left.toString())
+//                                                    Log.d("right", rect.right.toString())
+//                                                    Log.d("top", rect.top.toString())
+//                                                    Log.d("bottom", rect.bottom.toString())
                                                     //
                                                     //
                                                     //                                                    val faceCenterX = it.boundingBox.centerX()
                                                     //                                                    val faceCenterY = it.boundingBox.centerY()
 
                                                     val composeRect =
-                                                        face.boundingBox.toComposeRect()
+                                                        rect.toComposeRect()
+
+                                                    Log.d("face offset",
+                                                        " x = ${ composeRect.topLeft.x.toString() } y = ${composeRect.topLeft.y} " +
+                                                                " h = ${composeRect.height} x = ${composeRect.width}")
                                                     //
 
                                                     //
@@ -238,14 +246,11 @@ class MainActivity : ComponentActivity() {
 
                                                     drawRect(
                                                         Color.Red,
-                                                        topLeft = composeRect.topLeft.copy(
-                                                            y = composeRect.top + composeRect.height / 2,
-                                                            x = composeRect.left + composeRect.width / 2
-                                                        ),
+                                                        topLeft = composeRect.topLeft.copy(y = composeRect.top + ( 1000 * 4 / composeRect.height) , x = composeRect.left ),
                                                         style = Stroke(width = 2f),
                                                         size = Size(
-                                                            rect.width().toFloat() * 1.5f,
-                                                            rect.height().toFloat() * 2f
+                                                            rect.width().toFloat() * 1.5f ,
+                                                            rect.height().toFloat() * 1.5f
                                                         )
                                                     )
                                                 }
@@ -260,6 +265,23 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    fun mapRectOnView(mlKitRect: Rect, viewWidth: Int, viewHeight: Int): Rect {
+
+        // Get scale factor between mlKitRect and view
+        val xScale = viewWidth.toFloat() / mlKitRect.width()
+        val yScale = viewHeight.toFloat() / mlKitRect.height()
+
+        // Scale the coordinates
+        val left = mlKitRect.left * xScale
+        val top = mlKitRect.top * yScale
+        val right = left + (mlKitRect.width() * xScale)
+        val bottom = top + (mlKitRect.height() * yScale)
+
+        // Return mapped rect
+        return Rect(left.toInt(), top.toInt(), right.toInt(), bottom.toInt())
+
     }
 
 
