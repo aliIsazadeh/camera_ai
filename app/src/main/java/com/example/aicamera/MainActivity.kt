@@ -23,8 +23,15 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.Icon
+import androidx.compose.material.IconToggleButton
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
@@ -40,7 +47,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -77,6 +86,7 @@ class MainActivity : ComponentActivity() {
 //        faceRepo = FacesRepoImpl()
 
 
+        lateinit var preview: PreviewView
         setContent {
             AiCameraTheme {
                 // A surface container using the 'background' color from the theme
@@ -128,6 +138,8 @@ class MainActivity : ComponentActivity() {
                         }
                     )
 
+
+
                     permissionsState.permissions.forEach { perm ->
 
                         when (perm.permission) {
@@ -150,9 +162,13 @@ class MainActivity : ComponentActivity() {
                                                             ViewGroup.LayoutParams.MATCH_PARENT
                                                         )
                                                 }
+                                            preview = previewView
 
                                             CoroutineScope(Dispatchers.IO).launch {
-                                                startCamera(previewView)
+                                                startCamera(
+                                                    previewView,
+                                                    CameraSelector.DEFAULT_FRONT_CAMERA
+                                                )
 
                                             }
                                             previewView
@@ -168,96 +184,138 @@ class MainActivity : ComponentActivity() {
 
                                     var scale: Unit
                                     val state = viewModel?.faceState?.value
-                                    Box(modifier = Modifier.scale(scaleX = -1f, scaleY = 1f)) {
-                                        state?.let { faces ->
-                                            faces.onEach { face ->
 
-                                                androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                                                    val rect = face.boundingBox
+                                    var front by remember {
+                                        mutableStateOf(true)
+                                    }
 
+                                    fun changeCamera(isFront: Boolean) {
 
-                                                    val mapedRec = mapRectOnView(mlKitRect = rect, viewHeight = height, viewWidth = width)
+                                        scope.launch {
+                                            startCamera(
+                                                cameraPreview = preview,
+                                                cameraDirection = if (isFront) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA
+                                            )
+                                        }
+                                        front = isFront
 
-
-                                                    // Class variables
-                                                    var yOffset = 0
-                                                    var previousFaceCenterY = 0f
-
-// On each detect
-                                                    val currentFace = face
-                                                    val currentCenterY = currentFace.boundingBox.exactCenterY()
-
-                                                    if(currentCenterY > previousFaceCenterY) {
-                                                        // Face moved down
-                                                        yOffset++
-                                                    } else if (currentCenterY < previousFaceCenterY) {
-                                                        // Face moved up
-                                                        yOffset--
-                                                    }
-
-// Update previous for next time
-                                                    previousFaceCenterY = currentCenterY
-
-// Apply offset
-                                                    mapedRec.offset(0, -yOffset)
-
-//                                                        drawIntoCanvas {
-//                                                            it.drawRect(rect = face.boundingBox.toComposeRect() , paint =  boxPaint)
-//                                                        }
+                                    }
 
 
+                                    Box() {
+                                        if (front) {
+                                            CameraViewFront(faceStates = viewModel!!.faceState)
+                                        } else {
+                                            CameraViewBack(faceStates = viewModel!!.faceState)
+                                        }
+                                        IconToggleButton(
+                                            checked = front,
+                                            onCheckedChange = { changeCamera(it) },
+                                            modifier = Modifier
+                                                .padding(24.dp)
+                                                .align(
+                                                    Alignment.BottomCenter
+                                                )
+                                                .zIndex(1f)
+                                        ) {
 
-                                                    val newOffset: Offset = Offset(
-                                                        x = face.boundingBox.exactCenterX()
-                                                            .toFloat(),
-                                                        y = face.boundingBox.exactCenterY()
-                                                    )
-
-
-
-//                                                    Log.d("Left", rect.left.toString())
-//                                                    Log.d("right", rect.right.toString())
-//                                                    Log.d("top", rect.top.toString())
-//                                                    Log.d("bottom", rect.bottom.toString())
-                                                    //
-                                                    //
-                                                    //                                                    val faceCenterX = it.boundingBox.centerX()
-                                                    //                                                    val faceCenterY = it.boundingBox.centerY()
-
-                                                    val composeRect =
-                                                        rect.toComposeRect()
-
-                                                    Log.d("face offset",
-                                                        " x = ${ composeRect.topLeft.x.toString() } y = ${composeRect.topLeft.y} " +
-                                                                " h = ${composeRect.height} x = ${composeRect.width}")
-                                                    //
-
-                                                    //
-                                                    //                                                drawCircle(
-                                                    //                                                    color = Color.Red,
-                                                    //                                                    radius = rect.right.toFloat() - rect.centerX()
-                                                    //                                                        .toFloat(),
-                                                    //                                                    center = composeRect.center,
-                                                    //                                                    style = Stroke(width = 2f),
-                                                    //                                                )
-
-                                                    //
-
-
-                                                    drawRect(
-                                                        Color.Red,
-                                                        topLeft = composeRect.topLeft.copy(y = composeRect.top + ( 1000 * 4 / composeRect.height) , x = composeRect.left ),
-                                                        style = Stroke(width = 2f),
-                                                        size = Size(
-                                                            rect.width().toFloat() * 1.5f ,
-                                                            rect.height().toFloat() * 1.5f
-                                                        )
-                                                    )
-                                                }
-                                            }
+                                            Icon(
+                                                imageVector = Icons.Filled.Refresh,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(48.dp)
+                                            )
 
                                         }
                                     }
+//                                    Box(modifier = Modifier.scale(scaleX = -1f, scaleY = 1f)) {
+//                                        state?.let { faces ->
+//                                            faces.onEach { face ->
+//
+//                                                androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+//                                                    val rect = face.boundingBox
+//
+//
+////                                                    val mapedRec = mapRectOnView(mlKitRect = rect, viewHeight = height, viewWidth = width)
+//
+//
+//                                                    // Class variables
+//                                                    var yOffset = 0
+//                                                    var previousFaceCenterY = 0f
+//
+//// On each detect
+//                                                    val currentFace = face
+//                                                    val currentCenterY = currentFace.boundingBox.exactCenterY()
+//
+//                                                    if(currentCenterY > previousFaceCenterY) {
+//                                                        // Face moved down
+//                                                        yOffset++
+//                                                    } else if (currentCenterY < previousFaceCenterY) {
+//                                                        // Face moved up
+//                                                        yOffset--
+//                                                    }
+//
+//// Update previous for next time
+//                                                    previousFaceCenterY = currentCenterY
+//
+//// Apply offset
+////                                                    mapedRec.offset(0, -yOffset)
+//
+////                                                        drawIntoCanvas {
+////                                                            it.drawRect(rect = face.boundingBox.toComposeRect() , paint =  boxPaint)
+////                                                        }
+//
+//
+//
+//                                                    val newOffset: Offset = Offset(
+//                                                        x = face.boundingBox.exactCenterX()
+//                                                            .toFloat(),
+//                                                        y = face.boundingBox.exactCenterY()
+//                                                    )
+//
+//
+//
+////                                                    Log.d("Left", rect.left.toString())
+////                                                    Log.d("right", rect.right.toString())
+////                                                    Log.d("top", rect.top.toString())
+////                                                    Log.d("bottom", rect.bottom.toString())
+//                                                    //
+//                                                    //
+//                                                    //                                                    val faceCenterX = it.boundingBox.centerX()
+//                                                    //                                                    val faceCenterY = it.boundingBox.centerY()
+//
+//                                                    val composeRect =
+//                                                        rect.toComposeRect()
+//
+//                                                    Log.d("face offset",
+//                                                        " x = ${ composeRect.topLeft.x.toString() } y = ${composeRect.topLeft.y} " +
+//                                                                " h = ${composeRect.height} x = ${composeRect.width}")
+//                                                    //
+//
+//                                                    //
+//                                                    //                                                drawCircle(
+//                                                    //                                                    color = Color.Red,
+//                                                    //                                                    radius = rect.right.toFloat() - rect.centerX()
+//                                                    //                                                        .toFloat(),
+//                                                    //                                                    center = composeRect.center,
+//                                                    //                                                    style = Stroke(width = 2f),
+//                                                    //                                                )
+//
+//                                                    //
+//
+//
+//                                                    drawRect(
+//                                                        Color.Red,
+//                                                        topLeft = composeRect.topLeft.copy(y = composeRect.top + ( 10000 * 8 / composeRect.height) , x = composeRect.left+ ( 10000 * 2 / composeRect.width)),
+//                                                        style = Stroke(width = 2f),
+//                                                        size = Size(
+//                                                            rect.width().toFloat() * 2f ,
+//                                                            rect.height().toFloat() * 2f
+//                                                        )
+//                                                    )
+//                                                }
+//                                            }
+//                                        }
+//                                    }
                                 }
                             }
                         }
@@ -265,23 +323,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-
-    fun mapRectOnView(mlKitRect: Rect, viewWidth: Int, viewHeight: Int): Rect {
-
-        // Get scale factor between mlKitRect and view
-        val xScale = viewWidth.toFloat() / mlKitRect.width()
-        val yScale = viewHeight.toFloat() / mlKitRect.height()
-
-        // Scale the coordinates
-        val left = mlKitRect.left * xScale
-        val top = mlKitRect.top * yScale
-        val right = left + (mlKitRect.width() * xScale)
-        val bottom = top + (mlKitRect.height() * yScale)
-
-        // Return mapped rect
-        return Rect(left.toInt(), top.toInt(), right.toInt(), bottom.toInt())
-
     }
 
 
@@ -314,7 +355,7 @@ class MainActivity : ComponentActivity() {
 
 
     @SuppressLint("RestrictedApi")
-    private fun startCamera(cameraPreview: PreviewView) {
+    private fun startCamera(cameraPreview: PreviewView, cameraDirection: CameraSelector) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         val preview = androidx.camera.core.Preview.Builder()
             .build()
@@ -322,7 +363,7 @@ class MainActivity : ComponentActivity() {
         cameraProviderFuture.addListener(
             Runnable {
                 preview.setSurfaceProvider(cameraPreview.surfaceProvider)
-                cameraProviderFuture.get().bind(preview, imageAnalyzer)
+                cameraProviderFuture.get().bind(preview, imageAnalyzer, cameraDirection)
             },
             ContextCompat.getMainExecutor(this)
         )
@@ -351,6 +392,7 @@ class MainActivity : ComponentActivity() {
 //                    viewModel?.cameraFocusPoint = Offset(motionEvent.x, motionEvent.y)
                     return@setOnTouchListener true
                 }
+
                 else -> return@setOnTouchListener false
             }
         }
@@ -387,12 +429,13 @@ class MainActivity : ComponentActivity() {
 
     private fun ProcessCameraProvider.bind(
         preview: androidx.camera.core.Preview,
-        imageAnalyzer: ImageAnalysis
+        imageAnalyzer: ImageAnalysis,
+        cameraDirection: CameraSelector
     ) = try {
         unbindAll()
         bindToLifecycle(
             this@MainActivity,
-            CameraSelector.DEFAULT_FRONT_CAMERA,
+            cameraDirection,
             preview,
             imageAnalyzer
         )
