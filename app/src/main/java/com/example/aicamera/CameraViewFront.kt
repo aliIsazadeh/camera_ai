@@ -46,14 +46,7 @@ fun CameraViewFront(faceStates : State<List<Face>?>) {
                         yOffset--
                     }
 
-// Update previous for next time
                     previousFaceCenterY = currentCenterY
-
-// Apply offset
-
-//                                                        drawIntoCanvas {
-//                                                            it.drawRect(rect = face.boundingBox.toComposeRect() , paint =  boxPaint)
-//                                                        }
 
 
 
@@ -64,34 +57,14 @@ fun CameraViewFront(faceStates : State<List<Face>?>) {
                     )
 
 
-
-//                                                    Log.d("Left", rect.left.toString())
-//                                                    Log.d("right", rect.right.toString())
-//                                                    Log.d("top", rect.top.toString())
-//                                                    Log.d("bottom", rect.bottom.toString())
-                    //
-                    //
-                    //                                                    val faceCenterX = it.boundingBox.centerX()
-                    //                                                    val faceCenterY = it.boundingBox.centerY()
-
                     val composeRect =
                         rect.toComposeRect()
 
                     Log.d("face offset",
                         " x = ${ composeRect.topLeft.x.toString() } y = ${composeRect.topLeft.y} " +
                                 " h = ${composeRect.height} x = ${composeRect.width}")
-                    //
 
-                    //
-                    //                                                drawCircle(
-                    //                                                    color = Color.Red,
-                    //                                                    radius = rect.right.toFloat() - rect.centerX()
-                    //                                                        .toFloat(),
-                    //                                                    center = composeRect.center,
-                    //                                                    style = Stroke(width = 2f),
-                    //                                                )
 
-                    //
 
 
                     drawRect(
